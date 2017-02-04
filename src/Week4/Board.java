@@ -8,14 +8,18 @@ import java.util.Stack;
 /**
  * Created by greg on 1/19/17.
  */
+
+// How to convert 1-D array values to 2-D array values. In other words, take i and create i,j
+
 public class Board {
 
     private int[] boardArray;
-    private int[][] goalArray;
     private int dimension;
+    private int dimensionSquared;
 
+    /*
     private void createGoalArray(int dimension){
-        goalArray = new int[dimension][dimension];
+        goalArray = new int[dimension];
         for(int i=0;i<dimension;i++){
             for(int j=0;j<dimension;j++){
                 if(i == dimension-1  && j == dimension-1) goalArray[dimension-1][dimension-1] = 0;
@@ -29,23 +33,45 @@ public class Board {
             }
         }
     }
+    */
 
-    private int[][] swapBlocks(int[][] inputArr, int firstI,int firstJ,int secondI,int secondJ){
+    private int[][] swapBlocks(int[] inputArr, int firstI,int secondI){
         int tempVal1;
         int tempVal2;
+        int firstTempI;
+        int secondTempI;
+        int firstTempJ;
+        int secondTempJ;
         int[][] tempArray = new int[dimension][dimension];
+        int counter = 0;
 
-        tempVal1 = this.boardArray[firstI][firstJ];
-        tempVal2 = this.boardArray[secondI][secondJ];
+        if(firstI < dimension){
+            firstTempI = 0;
+        }else {
+            firstTempI = (int)Math.floor((double)firstI/dimension);
+        }
+        firstTempJ = firstI % dimension;
 
+        if(secondI < dimension){
+            secondTempI = 0;
+        }else {
+            secondTempI = (int)Math.floor((double)secondI/dimension);
+        }
+        secondTempJ = secondI % dimension;
+
+
+        tempVal1 = this.boardArray[firstI];
+        tempVal2 = this.boardArray[secondI];
+
+        // create a 2-d array from the given 1-D array
         for(int i=0;i<dimension;i++) {
-            for (int j = 0; j < dimension; j++) {
-                tempArray[i][j] = inputArr[i][j];
+            for(int j=0; j<dimension; j++){
+                tempArray[i][j] = inputArr[counter++];
             }
         }
 
-        tempArray[firstI][firstJ] = tempVal2;
-        tempArray[secondI][secondJ] = tempVal1;
+        tempArray[firstTempI][firstTempJ] = tempVal2;
+        tempArray[secondTempI][secondTempJ] = tempVal1;
 
         return tempArray;
     }
@@ -53,12 +79,16 @@ public class Board {
     public Board(int[][] blocks){
 
         dimension = blocks.length;
-        boardArray = new int[blocks.length];
-        createGoalArray(blocks.length);
+        dimensionSquared = blocks.length*blocks.length;
+        boardArray = new int[dimensionSquared];
+        int counter = 0;
+
+        // Probably dont want to hold the goal array in memory, takes up too much memory
+        // createGoalArray(blocks.length);
 
         for(int i=0; i<blocks.length; i++){
             for(int j=0; j<blocks.length; j++){
-                boardArray[i][j] = blocks[i][j];
+                boardArray[counter++] = blocks[i][j];
             }
         }
     }
@@ -71,12 +101,14 @@ public class Board {
     public int hamming(){
         int counter = 0;
 
-        for(int i=0; i<dimension(); i++) {
-            for (int j = 0; j < dimension(); j++) {
-                if (this.boardArray[i][j] != 0 && this.boardArray[i][j] != goalArray[i][j]) counter++;
+        for(int i = 0; i<dimensionSquared; i++){
+            if(i==(dimensionSquared-1)){
+                if(this.boardArray[i] != 0) counter++;
+            }
+            else {
+                if (this.boardArray[i] != 0 && this.boardArray[i] != i+1) counter++;
             }
         }
-
         return counter;
     }
 
@@ -86,15 +118,33 @@ public class Board {
         int tempVali = 0;
         int tempValj = 0;
 
-        for (int i = 0; i < dimension(); i++) {
-            for (int j = 0; j < dimension(); j++) {
-                if ((this.boardArray[i][j] != goalArray[i][j]) && (this.boardArray[i][j] != 0)) {
+        int iToi = 0;
+        int iToj = 0;
 
-                    tempVali = (int) Math.floor((this.boardArray[i][j] - 1) / dimension);
-                    tempValj = (this.boardArray[i][j] - 1) % dimension;
+        for (int i = 0; i < dimensionSquared; i++) {
+            if (i == (dimensionSquared - 1)) {
+                if (this.boardArray[i] != 0) {
 
-                    manhattenSum += Math.abs(i - tempVali) + Math.abs(j - tempValj);
+                    tempVali = (int) Math.floor((this.boardArray[i] - 1) / dimension);
+                    tempValj = (this.boardArray[i] - 1) % dimension;
 
+                    iToi = (int) Math.floor(i/dimension);
+                    iToj = i % dimension;
+                    manhattenSum += Math.abs(iToi - tempVali) + Math.abs(iToj - tempValj);
+                }
+            } else {
+                if ((this.boardArray[i] != i+1) && (this.boardArray[i] != 0)) {
+
+                    tempVali = (int) Math.floor((this.boardArray[i] - 1) / dimension);
+                    tempValj = (this.boardArray[i] - 1) % dimension;
+
+                    if(i<dimension){
+                        iToj = i;
+                    }else{
+                        iToj = i % dimension;
+                    }
+
+                    manhattenSum += Math.abs(iToi - tempVali) + Math.abs(iToj - tempValj);
                 }
             }
         }
@@ -102,9 +152,11 @@ public class Board {
     }
 
     public boolean isGoal(){
-        for(int i=0;i<dimension();i++){
-            for(int j=0; j<dimension(); j++){
-                if (this.boardArray[i][j] != goalArray[i][j]) return false;
+        for(int i=0;i<dimension;i++){
+            if(i==(dimension-1)){
+                return this.boardArray[i] == 0;
+            }else {
+                if (this.boardArray[i] != i+1) return false;
             }
         }
         return true;
@@ -114,24 +166,20 @@ public class Board {
         // Must not be 0 and must not switch the same value
         Random random1 = new Random();
         Random random2 = new Random();
-        int firstI = random1.nextInt(dimension);
-        int firstJ = random1.nextInt(dimension);
+        int firstI = random1.nextInt(dimensionSquared);
 
-        int secondI = random2.nextInt(dimension);
-        int secondJ = random2.nextInt(dimension);
+        int secondI = random2.nextInt(dimensionSquared);
 
         // Checks that none of the values are 0 and that they are not the same
-        while ((boardArray[firstI][firstJ] == 0) || (boardArray[secondI][secondJ] == 0)
-                || (firstI==secondI && firstJ==secondJ)){
-           firstI = random1.nextInt(dimension);
-           firstJ = random1.nextInt(dimension);
-           secondI = random2.nextInt(dimension);
-           secondJ = random2.nextInt(dimension);
+        while ((boardArray[firstI] == 0) || (boardArray[secondI] == 0)
+                || (firstI==secondI)){
+           firstI = random1.nextInt(dimensionSquared);
+           secondI = random2.nextInt(dimensionSquared);
         }
 
-        int[][] tempArr = new int[dimension][dimension];
+        int[][] tempArr;
 
-        tempArr = swapBlocks(this.boardArray, firstI, firstJ, secondI, secondJ);
+        tempArr = swapBlocks(this.boardArray, firstI, secondI);
 
         Board newBoard = new Board(tempArr);
         return newBoard;
@@ -146,10 +194,8 @@ public class Board {
 
         if(dimension != inputBoard.dimension()) return false;
 
-        for(int i=0; i<boardArray.length; i++){
-            for(int j=0; j<boardArray.length; j++){
-                if (this.boardArray[i][j] != inputBoard.boardArray[i][j]) return false;
-            }
+        for(int i=0; i<dimensionSquared; i++){
+                if (this.boardArray[i] != inputBoard.boardArray[i]) return false;
         }
 
         return true;
@@ -160,42 +206,39 @@ public class Board {
     // Each new board is made by switching the empty block with its neighbor
     public Iterable<Board> neighbors(){
 
-        int [][] tempArr = new int[dimension][dimension];
+        int [][] tempArr;
         int blankI=0;
-        int blankJ=0;
         Stack<Board> stack= new Stack<>();
 
         // Find the blank block
-        for(int i=0; i<dimension; i++){
-            for(int j=0; j<dimension; j++){
-                if(this.boardArray[i][j] == 0){
-                    blankI = i;
-                    blankJ = j;
-                }
+        for(int i=0; i<dimensionSquared; i++){
+            if(this.boardArray[i] == 0){
+                blankI = i;
             }
         }
 
         // Top
-        if(blankI != 0){
-            tempArr = swapBlocks(this.boardArray, blankI, blankJ, blankI-1, blankJ);
+        //if(blankI != 0){
+        if(blankI>=dimension){
+            tempArr = swapBlocks(this.boardArray, blankI, blankI-dimension);
             stack.add(new Board(tempArr));
         }
 
         // Right
-        if(blankJ != dimension-1){
-            tempArr = swapBlocks(this.boardArray, blankI, blankJ, blankI, blankJ+1);
+        if(((blankI+1)% dimension) !=0){
+            tempArr = swapBlocks(this.boardArray, blankI, blankI+1);
             stack.add(new Board(tempArr));
         }
 
         // Bottom
-        if(blankI != dimension-1){
-            tempArr = swapBlocks(this.boardArray, blankI, blankJ, blankI+1, blankJ);
+        if(((int)Math.floor(((double)blankI)/dimension)) < (dimension-1)) {
+            tempArr = swapBlocks(this.boardArray, blankI, blankI+dimension);
             stack.add(new Board(tempArr));
         }
 
         // Left
-        if(blankJ != 0){
-            tempArr = swapBlocks(this.boardArray, blankI, blankJ, blankI, blankJ-1);
+        if((blankI % dimension) != 0){
+            tempArr = swapBlocks(this.boardArray, blankI, blankI-1);
             stack.add(new Board(tempArr));
         }
 
@@ -205,10 +248,8 @@ public class Board {
     public String toString(){
         StringBuilder s = new StringBuilder();
         s.append(dimension() + "\n");
-        for(int i=0; i<dimension(); i++){
-            for(int j=0; j<dimension(); j++){
-                s.append(String.format("%2d ", boardArray[i][j]));
-            }
+        for(int i=0; i<dimensionSquared; i++){
+            s.append(String.format("%2d ", boardArray[i]));
             s.append("\n");
         }
         return s.toString();
