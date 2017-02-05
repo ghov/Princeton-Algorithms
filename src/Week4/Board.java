@@ -17,24 +17,6 @@ public class Board {
     private int dimension;
     private int dimensionSquared;
 
-    /*
-    private void createGoalArray(int dimension){
-        goalArray = new int[dimension];
-        for(int i=0;i<dimension;i++){
-            for(int j=0;j<dimension;j++){
-                if(i == dimension-1  && j == dimension-1) goalArray[dimension-1][dimension-1] = 0;
-                else {
-                    if (i == 0) {
-                        goalArray[i][j] = i + j + 1;
-                    } else {
-                        goalArray[i][j] = goalArray[i - 1][j] + dimension;
-                    }
-                }
-            }
-        }
-    }
-    */
-
     private int[][] swapBlocks(int[] inputArr, int firstI,int secondI){
         int tempVal1;
         int tempVal2;
@@ -126,7 +108,7 @@ public class Board {
                 if (this.boardArray[i] != 0) {
 
                     tempVali = (int) Math.floor((this.boardArray[i] - 1) / dimension);
-                    tempValj = (this.boardArray[i] - 1) % dimension;
+                    tempValj = (this.boardArray[i]-1) % dimension;
 
                     iToi = (int) Math.floor(i/dimension);
                     iToj = i % dimension;
@@ -135,8 +117,10 @@ public class Board {
             } else {
                 if ((this.boardArray[i] != i+1) && (this.boardArray[i] != 0)) {
 
-                    tempVali = (int) Math.floor((this.boardArray[i] - 1) / dimension);
-                    tempValj = (this.boardArray[i] - 1) % dimension;
+                    tempVali = (int) Math.floor((this.boardArray[i] - 1) / dimension);//2
+                    tempValj = (this.boardArray[i]-1) % dimension;//0
+
+                    iToi = (int) Math.floor(i/dimension);
 
                     if(i<dimension){
                         iToj = i;
@@ -152,8 +136,8 @@ public class Board {
     }
 
     public boolean isGoal(){
-        for(int i=0;i<dimension;i++){
-            if(i==(dimension-1)){
+        for(int i=0;i<dimensionSquared;i++){
+            if(i==(dimensionSquared-1)){
                 return this.boardArray[i] == 0;
             }else {
                 if (this.boardArray[i] != i+1) return false;
