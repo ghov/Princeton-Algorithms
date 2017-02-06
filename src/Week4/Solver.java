@@ -4,145 +4,108 @@ import edu.princeton.cs.algs4.Stack;
 import edu.princeton.cs.algs4.StdOut;
 import edu.princeton.cs.algs4.MinPQ;
 
-import java.util.Comparator;
 
 /**
  * Created by greg on 1/19/17.
  */
 public class Solver {
 
-    private MinPQ<SearchNode> queue;
-    private SearchNode init;
-    private int counter = 0;
+    private boolean solveable = false;
     private SearchNode finalNode;
 
-    private class SearchNode{
-        Board board = null;
-        int moves = 0;
+    private class SearchNode implements Comparable<SearchNode>{
+        Board board;
+        int moves;
         SearchNode previousNode = null;
-
-        public Board getBoard(){
-            return board;
-        }
+        int priority;
 
         public SearchNode(Board b){
-            board = b;
+            this(b, null);
         }
 
-        public SearchNode(Board b, int m, SearchNode previous){
-            this.moves = m;
+        public SearchNode(Board b, SearchNode previous){
             this.board = b;
             this.previousNode = previous;
-        }
-        public int priority(){
-            return board.hamming() + moves;
+
+            if(previous==null){
+                moves = 0;
+            }else{
+                moves = previous.moves+1;
+            }
+
+            this.priority = this.board.manhattan()+this.moves;
         }
 
-        public void incrementMoves(){
-            moves++;
+        public int compareTo(SearchNode inputNode){
+            if(this.priority == inputNode.priority) return 0;
+            else if(this.priority > inputNode.priority) return 1;
+            else return -1;
         }
     }
 
     public Solver(Board initial) throws java.lang.NullPointerException {
 
-        // Checks for null input
-        if (initial == null) {
+        if(initial == null){
             throw new java.lang.NullPointerException();
         }
 
-        queue = new MinPQ<>(this.comp());
+        MinPQ<SearchNode> queue = new MinPQ<>();
+        MinPQ<SearchNode> twinQueue = new MinPQ<>();
 
-        SearchNode temp;
-        init = new SearchNode(initial);
-        SearchNode temp2;
+        queue.insert(new SearchNode(initial));
+        twinQueue.insert(new SearchNode(initial.twin()));
 
-        queue.insert(init);
-        while (!queue.isEmpty()) {
-            if (queue.min().getBoard().isGoal()) {
-                finalNode = queue.min();
-                break;
-            } else {
-                this.counter++;
-                temp = queue.delMin();
-                // System.out.println(temp.board.toString());
-                // while (!queue.isEmpty()) queue.delMin();
-                for (Board b : temp.getBoard().neighbors()) {
-                    if (counter == 1) {
-                        temp2 = new SearchNode(b, this.counter, temp);
-                        queue.insert(temp2);
-                    } else {
-                        if (!b.equals(temp.previousNode.board)) {
-                            temp2 = new SearchNode(b, this.counter, temp);
-                            queue.insert(temp2);
-                        }
-                    }
-                }
+        // Try the normal board, then the twin board
+        while(!this.solveable){
+            this.finalNode = solveQueue(queue);
+            // if(this.finalNode!=null && this.finalNode.moves > 100) return;
+            if(this.finalNode!=null){
+                this.solveable = true;
+                return;
+            }
+            this.finalNode = solveQueue(twinQueue);
+            // if(this.finalNode!=null && this.finalNode.moves > 100) return;
+            if(this.finalNode!=null){
+                this.finalNode = null;
+                return;
             }
         }
     }
 
-    private Comparator<SearchNode> comp(){
-        return new myComp();
-    }
+    private SearchNode solveQueue(MinPQ<SearchNode> inputQueue){
+        // Takes a MinPQ, either original or twin, and tries to solve it.
+        SearchNode lastNode;
 
-    private class myComp implements Comparator<SearchNode>{
-        public int compare(SearchNode a, SearchNode b){
-            if(a.priority() == b.priority()) return 0;
-            else if(a.priority() > b.priority()) return 1;
-            else return -1;
+        if(inputQueue.isEmpty()) lastNode = null;
+        lastNode = inputQueue.delMin();
+        if(lastNode.board.isGoal()){
+            return lastNode;
+        }else {
+            for(Board b : lastNode.board.neighbors()){
+                if(lastNode.previousNode == null || !b.equals(lastNode.previousNode.board)){
+                    inputQueue.insert(new SearchNode(b, lastNode));
+                }
+            }
         }
+        return null;
     }
 
     public boolean isSolvable(){
-
-        // Use the initial game board and its twin. Only one of the boards will reach a goal.
-        SearchNode original = init;
-        SearchNode twin = new SearchNode(init.getBoard().twin());
-        SearchNode tempOriginal;
-        SearchNode tempTwin;
-
-        MinPQ<SearchNode> queueOriginal = new MinPQ<>(this.comp());
-        MinPQ<SearchNode> queueTwin = new MinPQ<>(this.comp());
-        queueOriginal.insert(original);
-        queueTwin.insert(twin);
-        int counter = 0;
-
-        while (!queueOriginal.isEmpty() || !queueTwin.isEmpty()){
-            if(queueOriginal.min().getBoard().isGoal()){
-                return true;
-            }else if(queueTwin.min().getBoard().isGoal()){
-                return false;
-            }else {
-                counter++;
-                // Take out the min Board from each queue and insert the neighbors
-                tempOriginal = queueOriginal.delMin();
-                tempTwin = queueTwin.delMin();
-                for (Board b : tempOriginal.getBoard().neighbors()){
-                    queueOriginal.insert(new SearchNode(b, counter, tempOriginal));
-                }
-                for (Board b : tempTwin.getBoard().neighbors()){
-                    queueTwin.insert(new SearchNode(b, counter, tempTwin));
-                }
-            }
-        }
-        return false;
+        return this.solveable;
     }
 
     public int moves(){
-        int counter=0;
-        SearchNode temp = finalNode;
-
-        while (temp.previousNode!=null){
-            counter++;
-            temp = temp.previousNode;
-        }
-
-        return counter;
+        if(this.finalNode != null) return this.finalNode.moves;
+        else return -1;
     }
 
     public Iterable<Board> solution(){
+        if(!solveable){
+            return null;
+        }
+
         Stack<Board> stack = new Stack<>() ;
-        SearchNode temp = finalNode;
+        SearchNode temp = this.finalNode;
 
         stack.push(temp.board);
 
@@ -168,7 +131,7 @@ public class Solver {
         Solver solver = new Solver(initial);
 
         // print solution to standard output
-        if (false)//!solver.isSolvable())
+        if (!solver.isSolvable())//!solver.isSolvable())
             StdOut.println("No solution possible");
         else {
             StdOut.println("Minimum number of moves = " + solver.moves());

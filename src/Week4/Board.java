@@ -230,10 +230,13 @@ public class Board {
     }
 
     public String toString(){
+        int counter=0;
         StringBuilder s = new StringBuilder();
         s.append(dimension() + "\n");
-        for(int i=0; i<dimensionSquared; i++){
-            s.append(String.format("%2d ", boardArray[i]));
+        for(int i=0; i<dimension; i++){
+            for(int j=0; j<dimension; j++) {
+                s.append(String.format("%2d ", boardArray[counter++]));
+            }
             s.append("\n");
         }
         return s.toString();
