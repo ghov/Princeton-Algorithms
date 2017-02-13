@@ -4,7 +4,6 @@ import edu.princeton.cs.algs4.Stack;
 import edu.princeton.cs.algs4.StdOut;
 import edu.princeton.cs.algs4.MinPQ;
 
-
 /**
  * Created by greg on 1/19/17.
  */
