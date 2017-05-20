@@ -219,7 +219,6 @@ public class KdTree {
         return best;
     }
 
-
     public static void main(String[] args){
 
         KdTree k = new KdTree();
